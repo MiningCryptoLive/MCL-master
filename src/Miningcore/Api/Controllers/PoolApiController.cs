@@ -11,77 +11,135 @@ using Miningcore.Persistence.Model;
 using Miningcore.Persistence.Model.Projections;
 using Miningcore.Persistence.Repositories;
 using Miningcore.Time;
+using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
+using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ActionConstraints;
 using NLog;
 
-namespace Miningcore.Api.Controllers;
-
-[Route("api/pools")]
-[ApiController]
-public class PoolApiController : ApiControllerBase
+namespace Miningcore.Api.Controllers
 {
-    public PoolApiController(IComponentContext ctx, IActionDescriptorCollectionProvider _adcp) : base(ctx)
+    [Route("api/pools")]
+    [ApiController]
+    public class PoolApiController : ApiControllerBase
     {
-        statsRepo = ctx.Resolve<IStatsRepository>();
-        blocksRepo = ctx.Resolve<IBlockRepository>();
-        minerRepo = ctx.Resolve<IMinerRepository>();
-        shareRepo = ctx.Resolve<IShareRepository>();
-        paymentsRepo = ctx.Resolve<IPaymentRepository>();
-        clock = ctx.Resolve<IMasterClock>();
-        pools = ctx.Resolve<ConcurrentDictionary<string, IMiningPool>>();
-        adcp = _adcp;
-    }
-
-    private readonly IStatsRepository statsRepo;
-    private readonly IBlockRepository blocksRepo;
-    private readonly IPaymentRepository paymentsRepo;
-    private readonly IMinerRepository minerRepo;
-    private readonly IShareRepository shareRepo;
-    private readonly IMasterClock clock;
-    private readonly IActionDescriptorCollectionProvider adcp;
-    private readonly ConcurrentDictionary<string, IMiningPool> pools;
-
-    private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
-    #region Actions
-
-    [HttpGet]
-    public async Task<GetPoolsResponse> Get(CancellationToken ct)
-    {
-        var response = new GetPoolsResponse
+        public PoolApiController(IComponentContext ctx, IActionDescriptorCollectionProvider _adcp) : base(ctx)
         {
-            Pools = await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async config =>
+            statsRepo = ctx.Resolve<IStatsRepository>();
+            blocksRepo = ctx.Resolve<IBlockRepository>();
+            minerRepo = ctx.Resolve<IMinerRepository>();
+            shareRepo = ctx.Resolve<IShareRepository>();
+            paymentsRepo = ctx.Resolve<IPaymentRepository>();
+            clock = ctx.Resolve<IMasterClock>();
+            pools = ctx.Resolve<ConcurrentDictionary<string, IMiningPool>>();
+            adcp = _adcp;
+        }
+
+        private readonly IStatsRepository statsRepo;
+        private readonly IBlockRepository blocksRepo;
+        private readonly IPaymentRepository paymentsRepo;
+        private readonly IMinerRepository minerRepo;
+        private readonly IShareRepository shareRepo;
+        private readonly IMasterClock clock;
+        private readonly IActionDescriptorCollectionProvider adcp;
+        private readonly ConcurrentDictionary<string, IMiningPool> pools;
+
+        private static readonly NLog.ILogger logger = LogManager.GetCurrentClassLogger();
+
+        #region Actions
+
+        [HttpGet]
+        public async Task<GetPoolsResponse> Get()
+        {
+            var response = new GetPoolsResponse
             {
-                // load stats
-                var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, config.Id, ct));
+                Pools = await Task.WhenAll(clusterConfig.Pools.Where(x => x.Enabled).Select(async config =>
+                {
+                    // load stats
+                    var stats = await cf.Run(con => statsRepo.GetLastPoolStatsAsync(con, config.Id));
 
-                // get pool
-                pools.TryGetValue(config.Id, out var pool);
+                    // get pool
+                    pools.TryGetValue(config.Id, out var pool);
 
-                // map
-                var result = config.ToPoolInfo(mapper, stats, pool);
+                    // map
+                    var result = config.ToPoolInfo(mapper, stats, pool);
 
-                // enrich
-                result.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, config.Id, ct));
-                result.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, config.Id, ct));
-                result.LastPoolBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, config.Id));
+                    // enrich
+                    result.TotalPaid = await cf.Run(con => statsRepo.GetTotalPoolPaymentsAsync(con, config.Id));
+                    result.TotalBlocks = await cf.Run(con => blocksRepo.GetPoolBlockCountAsync(con, config.Id));
+                    var lastBlockTime = await cf.Run(con => blocksRepo.GetLastPoolBlockTimeAsync(con, config.Id));
+                    result.LastPoolBlockTime = lastBlockTime;
 
-                var from = clock.Now.AddDays(-1);
+                    if(lastBlockTime.HasValue) {
+                        DateTime startTime = lastBlockTime.Value;
+                        logger.Info(() => "[API] Creating Pool Effort and Round Shares For API Response");
+                        var totalRoundShares = await cf.Run(con => shareRepo.CountAllSharesBetweenCreatedAsync(con, config.Id, startTime, clock.Now));
+                        var totalRoundHashes = await cf.Run(con => shareRepo.GetTotalShareDiffBetweenCreatedAsync(con, config.Id, pool.ShareMultiplier, startTime, clock.Now));
+                        var poolEffort = await cf.Run(con => shareRepo.GetEffortBetweenCreatedAsync(con, config.Id, pool.ShareMultiplier, startTime, clock.Now));
+                        result.RoundShares = totalRoundShares;
+                        result.RoundHashes = totalRoundHashes.Value;
+                        result.PoolEffort = poolEffort.Value;
+                    }
+                    else
+                    {
+                        logger.Warn(() => "[API] API failed to generate pool effort and round shares stats! These stats shall be displayed as 0.");
+                        result.RoundShares = 0;
+                        result.RoundHashes = 0;
+                        result.PoolEffort = 0;
+                    }
+                    result.PaymentProcessing.Extra = null;
+                    // Copy ports to hide info without changing Config
+                    Dictionary<int, PoolEndpoint> portsCopy = new Dictionary<int, PoolEndpoint>();
+                    foreach(int key in result.Ports.Keys)
+                    {
+                        PoolEndpoint poolEP = result.Ports[key];
+                        
+                        var newPoolEP = new PoolEndpoint
+                        {
+                            Name = poolEP.Name,
+                            VarDiff = poolEP.VarDiff,
+                            TlsPfxPassword = poolEP.TlsPfxPassword,
+                            TlsPfxFile = poolEP.TlsPfxFile,
+                            ListenAddress = poolEP.ListenAddress,
+                            Tls = poolEP.Tls,
+                            TcpProxyProtocol = poolEP.TcpProxyProtocol,
+                            Difficulty = poolEP.Difficulty,
+                          
+                        };
 
-                var minersByHashrate = await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, config.Id, from, 0, 15, ct));
+                        if(newPoolEP.Tls == true || newPoolEP.Tls == false)
+                        {
+                            newPoolEP.Tls = false;
+                        }
+                        if(!String.IsNullOrEmpty(poolEP.TlsPfxFile))
+                        {
+                            newPoolEP.TlsPfxFile = null;
+                        }
+                        if(!String.IsNullOrEmpty(poolEP.TlsPfxPassword))
+                        {
+                            newPoolEP.TlsPfxPassword = null;
+                        }
+                        portsCopy.Add(key, newPoolEP);
+                    }
+                    result.Ports = portsCopy;
+                    //result.RoundShares = 
+                    var from = clock.Now.AddDays(-1);
 
-                result.TopMiners = minersByHashrate.Select(mapper.Map<MinerPerformanceStats>).ToArray();
+                    var minersByHashrate = await cf.Run(con => statsRepo.PagePoolMinersByHashrateAsync(con, config.Id, from, 0, 15));
 
-                return result;
-            }).ToArray())
-        };
+                    result.TopMiners = minersByHashrate.Select(mapper.Map<MinerPerformanceStats>).ToArray();
 
-        return response;
-    }
+                    return result;
+                }).ToArray())
+            };
+
+            return response;
+        }
 
     [HttpGet("/api/help")]
     public ActionResult GetHelp()
