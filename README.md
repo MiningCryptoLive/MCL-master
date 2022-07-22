@@ -18,13 +18,6 @@
 - POW (proof-of-work) & POS (proof-of-stake) support
 - Detailed per-pool logging to console & filesystem
 - Runs on Linux and Windows
-
-### Support
-
-### Commercial support directly by the maintainer is available through miningcore.pro (https://store.miningcore.pro).
-
-### For general questions visit the [Discussions Area](https://github.com/oliverw/miningcore/discussions).
-
 ## Building on Debian/Ubuntu
 
 ```console
