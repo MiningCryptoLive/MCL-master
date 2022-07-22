@@ -109,7 +109,7 @@ Quit `psql` with \q
 Import the database schema:
 
 ```console
-sudo -u postgres psql -d miningcore -f miningcore/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
+sudo -u postgres psql -d miningcore -f kriptokyng-master/src/Miningcore/Persistence/Postgres/Scripts/createdb.sql
 ```
 
 #### Advanced setup
@@ -119,7 +119,7 @@ If you are planning to run a Multipool-Cluster, the simple setup might not perfo
 **WARNING**: The following step will delete all recorded shares. Do **NOT** do this on a production pool unless you backup your `shares` table using `pg_backup` first!
 
 ```console
-sudo -u postgres psql -d miningcore -f miningcore/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
+sudo -u postgres psql -d miningcore -f kriptokyng-master/src/Miningcore/Persistence/Postgres/Scripts/createdb_postgresql_11_appendix.sql
 ```
 
 After executing the command, your `shares` table is now a [list-partitioned table](https://www.postgresql.org/docs/11/ddl-partitioning.html) which dramatically improves query performance, since almost all database operations Miningcore performs are scoped to a certain pool.
