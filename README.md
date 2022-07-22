@@ -21,7 +21,7 @@
 
 ## Support
 
-## Commercial support directly by the maintainer is available through [miningcore.pro](https://store.miningcore.pro).
+## Commercial support directly by the maintainer is available through miningcore.pro (https://store.miningcore.pro).
 
 ## For general questions visit the [Discussions Area](https://github.com/oliverw/miningcore/discussions).
 
@@ -65,8 +65,8 @@ build-windows.bat
 In case you don't want to install any dependencies then you can build the app using the official Microsoft .NET SDK Docker image.
 
 ```console
-git clone https://github.com/oliverw/miningcore
-cd miningcore
+git clone https://github.com/lurchinms/kriptokyng-master
+cd kriptokyng-master
 ```
 Then build using Docker:
 
@@ -141,18 +141,18 @@ Once you have done this for all of your existing pools you should now restore yo
 
 ### Configuration
 
-Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration).
+### Create a configuration file `config.json` as described [here](https://github.com/oliverw/miningcore/wiki/Configuration).
 
 ### Start the Pool
 
 ```console
 cd build
-Miningcore -c config.json
+Miningcore.dll -c config.json
 ```
 
 ## Supported Currencies
 
-Refer to [this file](https://github.com/oliverw/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
+## Refer to [this file](https://github.com/oliverw/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
 ## Caveats
 
@@ -184,16 +184,3 @@ A public production pool requires a web-frontend for your users to check their h
 
 ## Donations
 
-To support this project you can become a [sponsor](https://github.com/sponsors/oliverw) or send a donation to the following accounts:
-
-* XMR: `46S2AEwYmD9fnmZkxCpXf1T3U3DyEq3Ekb8Lg9kgUMGABn9Fp9q5nE2fBcXebrjrXfZHy5uC5HfLE6X4WLtSm35wUr9Mh46`
-* BTC:  `bc1quzdczlpfn3n4xvpdz0x9h79569afhg0ashwxxp`
-* BCH:  `qrf6uhhapq7fgkjv2ce2hcjqpk8ec2zc25et4xsphv`
-* LTC:  `LTK6CWastkmBzGxgQhTTtCUjkjDA14kxzC`
-* DOGE: `DGDuKRhBewGP1kbUz4hszNd2p6dDzWYy9Q`
-* ETH:  `0xcb55abBfe361B12323eb952110cE33d5F28BeeE1`
-* ETC:  `0xF8cCE9CE143C68d3d4A7e6bf47006f21Cfcf93c0`
-* DASH: `XqpBAV9QCaoLnz42uF5frSSfrJTrqHoxjp`
-* ZEC:  `t1YHZHz2DGVMJiggD2P4fBQ2TAPgtLSUwZ7`
-* BTG:  `GQb77ZuMCyJGZFyxpzqNfm7GB1rQreP4n6`
-* ERGO: `9foYU8JkoqWBSDA3ba8VHfduPXV2NaVNPPAFkdYoR9t9cPQGMv4`
