@@ -21,15 +21,15 @@
 
 ## Support
 
-Commercial support directly by the maintainer is available through [miningcore.pro](https://store.miningcore.pro).
+## Commercial support directly by the maintainer is available through [miningcore.pro](https://store.miningcore.pro).
 
-For general questions visit the [Discussions Area](https://github.com/oliverw/miningcore/discussions).
+## For general questions visit the [Discussions Area](https://github.com/oliverw/miningcore/discussions).
 
 ## Building on Debian/Ubuntu
 
 ```console
-git clone https://github.com/oliverw/miningcore
-cd miningcore
+git clone https://github.com/lurchinms/kriptokyng-master
+cd kriptokyng-master
 ```
 
 Depending on your OS Version run either of these scripts:
