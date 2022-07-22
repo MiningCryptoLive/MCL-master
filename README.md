@@ -131,9 +131,6 @@ CREATE TABLE shares_mypool1 PARTITION OF shares FOR VALUES IN ('mypool1');
 ```
 
 Once you have done this for all of your existing pools you should now restore your shares from backup.
-
-### Configuration
-
 ### Start the Pool
 
 ```console
