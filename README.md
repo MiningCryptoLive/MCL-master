@@ -164,11 +164,8 @@ Miningcore.dll -c config.json
 
 ## API
 
-Miningcore comes with an integrated REST API. Please refer to this page for instructions: https://github.com/oliverw/miningcore/wiki/API
+Miningcore comes with an integrated REST API.
 
 ## Running a production pool
 
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point.
-
-## Donations
-
