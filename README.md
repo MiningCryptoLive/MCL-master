@@ -142,11 +142,6 @@ Once you have done this for all of your existing pools you should now restore yo
 cd build
 Miningcore.dll -c config.json
 ```
-
-## Supported Currencies
-
-## Refer to [this file](https://github.com/oliverw/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
-
 ## Caveats
 
 ### Monero
